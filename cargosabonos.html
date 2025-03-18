@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Transacciones</title>
+  <style>
+    /* Estilo general de la tabla */
+    #transactionTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Estilo de las celdas de la tabla */
+    #transactionTable th, #transactionTable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    /* Estilo del encabezado de la tabla */
+    #transactionTable th {
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    /* Estilo de las filas de la tabla */
+    #transactionTable tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    #transactionTable tr:hover {
+      background-color: #ddd;
+    }
+
+    /* Estilo del borde exterior de la tabla */
+    #transactionTable {
+      border: 2px solid #4CAF50;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Estilo de la paginación */
+    .pagination {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      list-style-type: none;
+    }
+
+    .pagination li {
+      margin: 0 5px;
+    }
+
+    .pagination button {
+      padding: 5px 10px;
+      border: 1px solid #ddd;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .pagination button.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .pagination button:disabled {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>Registro de Transacciones</h1>
+  <div>
+    <label for="cuentasSelect">Seleccionar Cuenta:</label>
+    <select id="cuentasSelect">
+      <option value="">Cargando opciones...</option>
+    </select>
+  </div>
+  <div>
+    <label for="cargoInput">Cargo:</label>
+    <input type="text" id="cargoInput">
+  </div>
+  <div>
+    <label for="abonoInput">Abono:</label>
+    <input type="text" id="abonoInput">
+  </div>
+  <div>
+    <label for="detalleInput">Detalle:</label>
+    <input type="text" id="detalleInput">
+  </div>
+  <div>
+    <button onclick="enviarDatos()">Enviar</button>
+  </div>
+  <table id="transactionTable">
+    <!-- Transaction history table will be dynamically populated here -->
+  </table>
+  <ul class="pagination" id="pagination">
+    <!-- Pagination buttons will be dynamically created here -->
+  </ul>
+
+  <script>
+    const rowsPerPage = 10;
+    let currentPage = 1;
+    let transactions = [];
+
+    function cargarHistorial() {
+      const selectedAccountId = document.getElementById('cuentasSelect').value;
+      fetch(`http://vserv.dynu.net:5462/myservices/app002_getmovimientoscuenta.php?cuentaid=${selectedAccountId}`)
+        .then(response => response.json())
+        .then(data => {
+          transactions = data;
+          displayPage(1);
+          setupPagination();
+        })
+        .catch(error => {
+          console.error('Error fetching transaction history:', error);
+          alert('Error fetching transaction history');
+        });
+    }
+
+    function displayPage(page) {
+      const start = (page - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const paginatedData = transactions.slice(start, end);
+
+      const table = document.getElementById('transactionTable');
+      table.innerHTML = ''; // Clear previous table data
+
+      if (paginatedData.length > 0) {
+        // Create table header
+        const header = table.createTHead();
+        const headerRow = header.insertRow();
+        for (let key in paginatedData[0]) {
+          const th = document.createElement('th');
+          th.appendChild(document.createTextNode(key));
+          headerRow.appendChild(th);
+        }
+
+        // Create table body
+        const body = table.createTBody();
+        paginatedData.forEach(item => {
+          const row = body.insertRow();
+          for (let key in item) {
+            const cell = row.insertCell();
+            cell.appendChild(document.createTextNode(item[key]));
+          }
+        });
+      } else {
+        table.innerHTML = '<tr><td colspan="4">No hay transacciones disponibles.</td></tr>';
+      }
+    }
+
+    function setupPagination() {
+      const pageCount = Math.ceil(transactions.length / rowsPerPage);
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = ''; // Clear previous pagination
+
+      for (let i = 1; i <= pageCount; i++) {
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.textContent = i;
+        button.className = (i === currentPage) ? 'active' : '';
+        button.addEventListener('click', () => {
+          currentPage = i;
+          displayPage(i);
+          setupPagination();
+        });
+        li.appendChild(button);
+        pagination.appendChild(li);
+      }
+    }
+
+    document.getElementById('cuentasSelect').addEventListener('change', cargarHistorial);
+
+    function enviarDatos() {
+      const cargo = document.getElementById('cargoInput').value;
+      const abono = document.getElementById('abonoInput').value;
+      const detalle = document.getElementById('detalleInput').value;
+      const cuentaid = document.getElementById('cuentasSelect').value;
+
+      const url = `http://vserv.dynu.net:5462/myservices/app002_insertacargoabono.php?cargo=${cargo}&abono=${abono}&concepto=${detalle}&cuentaid=${cuentaid}`;
+
+      fetch(url)
+        .then(response => {
+          if (response.ok) {
+            alert('Datos enviados exitosamente');
+            location.reload(); // Refresh the page after showing the alert
+          } else {
+            alert('Error al enviar los datos');
+          }
+        })
+        .catch(error => {
+          console.error('Error sending data:', error);
+          alert('Error al enviar los datos');
+        });
+    }
+
+    fetch('http://vserv.dynu.net:5462/myservices/app002_cuentas.php')
+      .then(response => response.json())
+      .then(data => {
+        const selectElement = document.getElementById('cuentasSelect');
+        selectElement.innerHTML = ''; // Clear the loading option
+        data.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.cuentaid;
+          option.textContent = item.cuenta;
+          selectElement.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching JSON data:', error);
+        const selectElement = document.getElementById('cuentasSelect');
+        selectElement.innerHTML = '<option value="">Error al cargar opciones</option>';
+      });
+  </script>
+</body>
+</html>
