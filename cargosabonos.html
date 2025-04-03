@@ -110,7 +110,7 @@
 
     function cargarHistorial() {
       const selectedAccountId = document.getElementById('cuentasSelect').value;
-      fetch(`http://vserv.dynu.net:5462/myservices/app002_getmovimientoscuenta.php?cuentaid=${selectedAccountId}`)
+      fetch(`https://vserv.dynu.net/myservices/app002_getmovimientoscuenta.php?cuentaid=${selectedAccountId}`)
         .then(response => response.json())
         .then(data => {
           transactions = data;
