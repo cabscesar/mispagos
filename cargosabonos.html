@@ -183,7 +183,7 @@
       const detalle = document.getElementById('detalleInput').value;
       const cuentaid = document.getElementById('cuentasSelect').value;
 
-      const url = `https://vserv.dynu.net:5462/myservices/app002_insertacargoabono.php?cargo=${cargo}&abono=${abono}&concepto=${detalle}&cuentaid=${cuentaid}`;
+      const url = `https://vserv.dynu.net/myservices/app002_insertacargoabono.php?cargo=${cargo}&abono=${abono}&concepto=${detalle}&cuentaid=${cuentaid}`;
 
       fetch(url)
         .then(response => {
@@ -200,7 +200,7 @@
         });
     }
 
-    fetch('https://vserv.dynu.net:5462/myservices/app002_cuentas.php')
+    fetch('https://vserv.dynu.net/myservices/app002_cuentas.php')
       .then(response => response.json())
       .then(data => {
         const selectElement = document.getElementById('cuentasSelect');
